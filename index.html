@@ -9,51 +9,485 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            /* Light Theme: Chocolate Truffle */
+            --bg-color: #FDFBD4;       
+            --text-main: #38240D;      
+            --text-muted: #713600;     
+            --btn-bg: #C05800;         
+            --btn-hover: #713600;      
+            --btn-text: #FDFBD4;       
+            --border-color: #713600;
+            --toggle-bg-hover: rgba(113, 54, 0, 0.1); 
+            
+            --font-serif: 'Playfair Display', serif;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+            
+            --transition-speed: 0.4s;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Override */
+            --bg-color: #38240D;       
+            --text-main: #FDFBD4;      
+            --text-muted: #e8d5c4;     
+            --btn-bg: #C05800;         
+            --btn-hover: #FDFBD4;      
+            --btn-text: #38240D;       
+            --border-color: #e8d5c4;
+            --toggle-bg-hover: rgba(253, 251, 212, 0.1);
+        }
+
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation: none;
+            mix-blend-mode: normal;
+        }
+        ::view-transition-old(root) { z-index: 1; }
+        ::view-transition-new(root) { z-index: 2; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { font-family: var(--font-serif); color: var(--text-main); font-weight: 700; }
+        p { color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem; }
+
+        /* --- Theme Toggle Icon Button --- */
+        .theme-toggle {
+            position: fixed; top: 2rem; right: 5%; background: transparent; border: none;
+            color: var(--text-main); width: 44px; height: 44px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            z-index: 1000; transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .theme-toggle:hover { background-color: var(--toggle-bg-hover); transform: scale(1.05); }
+        .theme-toggle svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.5rem;
+            background-color: var(--btn-bg); color: var(--btn-text); text-decoration: none;
+            border-radius: 50px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase; transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn:hover { background-color: var(--btn-hover); transform: translateY(-2px); color: var(--bg-color); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+
+        /* --- Hero Section --- */
+        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .hero h1 { font-size: clamp(4rem, 8vw, 6rem); line-height: 1.1; margin-bottom: 2rem; letter-spacing: -0.02em; }
+        .hero-subtitle { font-family: var(--font-mono); font-size: 1rem; color: var(--btn-bg); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* --- DENSE ARC TIMELINE SECTION --- */
+        .roadmap { padding: 6rem 0; opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; text-align: center; }
+        .roadmap.visible { opacity: 1; transform: translateY(0); }
+        .roadmap h2 { font-size: 3rem; margin-bottom: 2rem; }
+
+        .timeline-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            /* Fades the edges of the timeline container */
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch; 
+            scrollbar-width: none;
+            cursor: grab;
+        }
+        .timeline-container:active { cursor: grabbing; }
+        .timeline-container::-webkit-scrollbar { display: none; }
+
+        .timeline-track {
+            display: flex;
+            align-items: flex-end;
+            height: 150px;
+            width: max-content;
+            margin-top: 80px; 
+        }
+
+        .timeline-spacer {
+            flex-shrink: 0;
+        }
+
+        .timeline-node {
+            width: 35px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            position: relative;
+            height: 100%;
+        }
+
+        .node-tick {
+            width: 2px;
+            background-color: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .milestone .node-tick { background-color: var(--text-main); }
+        .milestone.active .node-tick { background-color: var(--btn-bg); width: 4px; }
+
+        .node-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background-color: var(--text-main); margin-top: 10px;
+            display: none; 
+        }
+        .milestone .node-dot { display: block; }
+        .milestone.active .node-dot { background-color: var(--btn-bg); transform: scale(1.5); }
+
+        .node-date {
+            position: absolute;
+            top: -40px;
+            font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700;
+            color: var(--text-main); white-space: nowrap;
+            opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .timeline-center-guide {
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+            width: 2px; height: 150px; background: linear-gradient(to bottom, transparent, var(--btn-bg), transparent);
+            pointer-events: none; z-index: -1; opacity: 0.3;
+        }
+
+        /* Content Display Box */
+        .timeline-display {
+            min-height: 150px; max-width: 600px; margin: 2rem auto 0; text-align: center;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            padding: 0 1rem;
+        }
+        .timeline-display h3 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--btn-bg); }
+        .timeline-display h4 { font-family: var(--font-mono); font-size: 1rem; color: var(--text-main); margin-bottom: 1rem; text-transform: uppercase; }
+
+        /* --- Projects Section --- */
+        .project-row { display: flex; align-items: center; justify-content: space-between; min-height: 80vh; padding: 4rem 0; gap: 4rem; opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .project-row.visible, .roadmap.visible { opacity: 1; transform: translateY(0); }
+        .project-row:nth-child(even) { flex-direction: row-reverse; }
+        .project-info { flex: 1; max-width: 500px; }
+        .project-tag { font-family: var(--font-mono); font-size: 0.85rem; color: var(--border-color); margin-bottom: 1rem; display: inline-block; }
+        .project-info h2 { font-size: 2.2rem; margin-bottom: 1.5rem; }
+        .project-visual { flex: 1; display: flex; justify-content: center; align-items: center; height: 400px; }
+
+        /* --- Contact Section --- */
+        .contact { min-height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 4rem 0; opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .contact.visible { opacity: 1; transform: translateY(0); }
+        .contact h2 { font-size: 4rem; margin-bottom: 2rem; }
+        .social-links { display: flex; gap: 1.5rem; margin-top: 1rem; }
+        .icon { width: 24px; height: 24px; fill: none; stroke: var(--text-main); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.3s ease, transform 0.2s ease; }
+        .icon:hover { stroke: var(--btn-bg); transform: translateY(-2px); }
+
+        @media (max-width: 900px) {
+            .project-row, .project-row:nth-child(even) { flex-direction: column; text-align: left; gap: 2rem; }
+            .project-visual { height: 300px; width: 100%; }
+        }
+    </style>
 </head>
 <body>
 
-<button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-    </svg>
-    <svg id="sunIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="5"></circle>
-        <line x1="12" y1="1" x2="12" y2="3"></line>
-        <line x1="12" y1="21" x2="12" y2="23"></line>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-        <line x1="1" y1="12" x2="3" y2="12"></line>
-        <line x1="21" y1="12" x2="23" y2="12"></line>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-    </svg>
-</button>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg id="sunIcon" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    </button>
 
-<div class="container">
+    <div class="container">
+        <header class="hero fade-in">
+            <span class="hero-subtitle">System Online</span>
+            <h1>Hello,<br>My name is RRLL.</h1>
+            <p>Electrical Engineering student at IVC & SCC.</p>
+            <a href="#roadmap" class="btn">View Architecture &rarr;</a>
+        </header>
 
-<header class="hero fade-in">
-    <span class="hero-subtitle">System Online</span>
-    <h1>Hello,<br>My name is RRLL.</h1>
-    <p>Electrical Engineering student at IVC & SCC.</p>
-    <a href="#roadmap" class="btn">View Architecture →</a>
-</header>
+        <section class="roadmap fade-in" id="roadmap">
+            <h2>Roadmap</h2>
+            
+            <div class="timeline-container" id="timelineContainer">
+                <div class="timeline-center-guide"></div>
+                <div class="timeline-track" id="timelineTrack"></div>
+            </div>
 
-<section class="roadmap fade-in" id="roadmap">
-    <h2>Roadmap</h2>
-    <div class="timeline-container" id="timelineContainer">
-        <div class="timeline-center-guide"></div>
-        <div class="timeline-track" id="timelineTrack"></div>
+            <div class="timeline-display" id="timelineDisplay">
+                <h3 id="displayTitle">Title</h3>
+                <h4 id="displaySubtitle">Subtitle</h4>
+                <p id="displayDesc">Description goes here.</p>
+            </div>
+        </section>
+
+        <main id="projects">
+            <section class="project-row fade-in">
+                <div class="project-visual">
+                    <svg width="200" height="200" viewBox="0 0 100 100">
+                        <line x1="20" y1="80" x2="40" y2="20" stroke="var(--text-main)" stroke-width="2"/>
+                        <path d="M40,20 Q60,10 80,40 T90,80" fill="none" stroke="var(--border-color)" stroke-width="2" stroke-dasharray="4"/>
+                        <circle cx="20" cy="80" r="4" fill="var(--btn-bg)"/>
+                        <circle cx="40" cy="20" r="4" fill="var(--btn-bg)"/>
+                    </svg>
+                </div>
+                <div class="project-info">
+                    <span class="project-tag">// PHYSICS_4A.SIM</span>
+                    <h2>1.1 Classical Mechanics</h2>
+                    <p>Simulating 2D kinematics and projectile motion algorithms based on my Physics 4A coursework. This involves calculating trajectory vectors, displacement, and terminal velocity using C++ data structures.</p>
+                    <a href="#" class="btn">View Simulation &rarr;</a>
+                </div>
+            </section>
+
+            <section class="project-row fade-in">
+                <div class="project-visual">
+                    <svg width="200" height="200" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border-color)" stroke-width="1"/>
+                        <path d="M20,40 Q50,10 80,60 T30,80" fill="none" stroke="var(--border-color)" stroke-width="0.5" opacity="0.6"/>
+                        <path d="M30,30 Q80,20 60,80 T20,60" fill="none" stroke="var(--border-color)" stroke-width="0.5" opacity="0.6"/>
+                        <path d="M40,20 Q90,50 50,90 T10,50" fill="none" stroke="var(--border-color)" stroke-width="0.5" opacity="0.6"/>
+                    </svg>
+                </div>
+                <div class="project-info">
+                    <span class="project-tag">// ENV_SCI.DATA</span>
+                    <h2>1.2 Foodprint Analysis</h2>
+                    <p>A data visualization and reflection project based on my Environmental Science course calculating ecological footprints. The project evaluates resource consumption, graphing the impact of dietary choices on global emissions.</p>
+                    <a href="#" class="btn">View Dataset &rarr;</a>
+                </div>
+            </section>
+        </main>
+
+        <footer class="contact fade-in">
+            <h2>Contact</h2>
+            <p>I am always excited to connect with others who share my passions in hardware and software engineering.</p>
+            <div class="social-links">
+                <a href="#"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+                <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></a>
+                <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a>
+                <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>
+            </div>
+        </footer>
     </div>
-    <div class="timeline-display" id="timelineDisplay">
-        <h3 id="displayTitle">Title</h3>
-        <h4 id="displaySubtitle">Subtitle</h4>
-        <p id="displayDesc">Description goes here.</p>
-    </div>
-</section>
 
-</div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Theme Toggle Logic ---
+            const themeToggleBtn = document.getElementById('themeToggle');
+            const moonIcon = document.getElementById('moonIcon');
+            const sunIcon = document.getElementById('sunIcon');
+            
+            themeToggleBtn.addEventListener('click', (event) => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const toggleTheme = () => {
+                    if (isDark) {
+                        document.documentElement.removeAttribute('data-theme');
+                        moonIcon.style.display = 'block'; sunIcon.style.display = 'none';
+                    } else {
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                        moonIcon.style.display = 'none'; sunIcon.style.display = 'block';
+                    }
+                };
 
-<script src="script.js" defer></script>
+                if (!document.startViewTransition) return toggleTheme();
+
+                const x = event.clientX, y = event.clientY;
+                const endRadius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+                const transition = document.startViewTransition(toggleTheme);
+                transition.ready.then(() => {
+                    document.documentElement.animate(
+                        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+                        { duration: 600, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+                    );
+                });
+            });
+
+            // --- Dynamic Arc Timeline Logic ---
+            const track = document.getElementById('timelineTrack');
+            const container = document.getElementById('timelineContainer');
+            const displayTitle = document.getElementById('displayTitle');
+            const displaySubtitle = document.getElementById('displaySubtitle');
+            const displayDesc = document.getElementById('displayDesc');
+            const timelineDisplay = document.getElementById('timelineDisplay');
+
+            const milestonesData = [
+                { date: "Aug 2024", title: "Irvine Valley College", subtitle: "Foundation", desc: "Pursuing an A.S. in Electrical Engineering. Concurrently enrolled at SCC to build a rigorous academic foundation." },
+                { date: "Feb 2026", title: "AI in Education", subtitle: "Research", desc: "Authored a comprehensive research essay evaluating the cognitive impacts of Artificial Intelligence in modern education systems." },
+                { date: "Spring 2026", title: "Low-Level Logic", subtitle: "C/C++", desc: "Building software logic implementations, exploring concepts like sentinel values and memory limits (FLT_MAX/MIN) in C/C++." },
+                { date: "Fall 2026", title: "Transfer to UCI", subtitle: "Target Protocol", desc: "Aiming to join the Samueli School of Engineering at UC Irvine to complete my B.S. in Electrical Engineering." },
+                { date: "Future", title: "Industry Engineer", subtitle: "Career Goal", desc: "Applying advanced hardware architecture and embedded software development skills in the professional engineering industry." }
+            ];
+
+            const TICKS_BETWEEN_MILESTONES = 8; 
+
+            // 1. Build the HTML dynamically
+            track.innerHTML += `<div class="timeline-spacer left-spacer"></div>`; 
+            
+            milestonesData.forEach((ms, index) => {
+                const node = document.createElement('div');
+                node.className = 'timeline-node milestone';
+                node.dataset.title = ms.title; node.dataset.subtitle = ms.subtitle; node.dataset.desc = ms.desc;
+                node.innerHTML = `
+                    <div class="node-date">${ms.date}</div>
+                    <div class="node-tick"></div>
+                    <div class="node-dot"></div>
+                `;
+                track.appendChild(node);
+
+                if (index < milestonesData.length - 1) {
+                    for(let i=0; i<TICKS_BETWEEN_MILESTONES; i++) {
+                        const filler = document.createElement('div');
+                        filler.className = 'timeline-node';
+                        filler.innerHTML = `<div class="node-tick"></div>`;
+                        track.appendChild(filler);
+                    }
+                }
+            });
+            track.innerHTML += `<div class="timeline-spacer right-spacer"></div>`;
+
+            const nodes = document.querySelectorAll('.timeline-node');
+            const leftSpacer = document.querySelector('.left-spacer');
+            const rightSpacer = document.querySelector('.right-spacer');
+
+            // 2. Parabolic Arc Calculation on Scroll
+            function updateTimeline() {
+                const halfContainer = container.offsetWidth / 2;
+                const nodeWidthOffset = 17.5; 
+                const spacerWidth = halfContainer - nodeWidthOffset;
+                
+                leftSpacer.style.width = `${spacerWidth}px`;
+                rightSpacer.style.width = `${spacerWidth}px`;
+
+                const center = container.getBoundingClientRect().left + halfContainer;
+                let closestMilestone = null;
+                let minDistance = Infinity;
+
+                nodes.forEach(node => {
+                    const rect = node.getBoundingClientRect();
+                    const nodeCenter = rect.left + rect.width / 2;
+                    const dist = Math.abs(center - nodeCenter);
+                    
+                    const maxDist = halfContainer;
+                    let scale = Math.max(0, 1 - Math.pow(dist / maxDist, 1.5)); 
+                    
+                    const tick = node.querySelector('.node-tick');
+                    if(tick) {
+                        tick.style.height = `${15 + (100 * scale)}px`; 
+                        tick.style.opacity = 0.1 + (0.9 * scale);
+                    }
+
+                    if (node.classList.contains('milestone')) {
+                        const date = node.querySelector('.node-date');
+                        if(date) {
+                            date.style.opacity = scale > 0.85 ? 1 : 0;
+                            date.style.transform = `translateY(${10 - (10 * scale)}px)`;
+                        }
+
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            closestMilestone = node;
+                        }
+                    }
+                });
+
+                if (closestMilestone && !closestMilestone.classList.contains('active')) {
+                    document.querySelectorAll('.milestone').forEach(m => m.classList.remove('active'));
+                    closestMilestone.classList.add('active');
+
+                    timelineDisplay.style.opacity = 0;
+                    timelineDisplay.style.transform = 'translateY(10px)';
+                    
+                    setTimeout(() => {
+                        displayTitle.textContent = closestMilestone.dataset.title;
+                        displaySubtitle.textContent = closestMilestone.dataset.subtitle;
+                        displayDesc.textContent = closestMilestone.dataset.desc;
+                        
+                        timelineDisplay.style.opacity = 1;
+                        timelineDisplay.style.transform = 'translateY(0)';
+                    }, 200);
+                }
+            }
+
+            container.addEventListener('scroll', updateTimeline);
+            window.addEventListener('resize', updateTimeline);
+            
+            setTimeout(updateTimeline, 100);
+
+            // --- Auto-Scroll Logic ---
+            let isAutoScrolling = false;
+            let autoScrollAnimationId;
+
+            const autoScrollTimeline = () => {
+                if (!isAutoScrolling) return;
+                
+                container.scrollLeft += 1.5; 
+                
+                if (container.scrollLeft >= (container.scrollWidth - container.clientWidth)) {
+                    isAutoScrolling = false;
+                    return;
+                }
+                
+                autoScrollAnimationId = requestAnimationFrame(autoScrollTimeline);
+            };
+
+            const stopAutoScroll = () => {
+                if(isAutoScrolling) {
+                    isAutoScrolling = false;
+                    cancelAnimationFrame(autoScrollAnimationId);
+                }
+            };
+
+            container.addEventListener('mousedown', stopAutoScroll);
+            container.addEventListener('touchstart', stopAutoScroll, {passive: true});
+            container.addEventListener('wheel', stopAutoScroll, {passive: true});
+
+            const timelineObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        isAutoScrolling = true;
+                        autoScrollTimeline();
+                        timelineObserver.unobserve(entry.target); 
+                    }
+                });
+            }, { threshold: 0.5 }); 
+            
+            timelineObserver.observe(container);
+
+            // Desktop custom drag logic
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+            container.addEventListener('mousedown', (e) => {
+                isDown = true; startX = e.pageX - container.offsetLeft; scrollLeft = container.scrollLeft;
+            });
+            container.addEventListener('mouseleave', () => { isDown = false; });
+            container.addEventListener('mouseup', () => { isDown = false; });
+            container.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault(); 
+                const x = e.pageX - container.offsetLeft;
+                const walk = (x - startX) * 2; 
+                container.scrollLeft = scrollLeft - walk;
+            });
+
+            // --- Scroll Animation Observer ---
+            const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target); 
+                    }
+                });
+            }, observerOptions);
+            document.querySelectorAll('.fade-in').forEach((el) => { observer.observe(el); });
+        });
+    </script>
 </body>
 </html>
