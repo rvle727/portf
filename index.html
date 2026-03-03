@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRLL | Electrical Engineering</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+    <svg id="sunIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+</button>
+
+<div class="container">
+
+<header class="hero fade-in">
+    <span class="hero-subtitle">System Online</span>
+    <h1>Hello,<br>My name is RRLL.</h1>
+    <p>Electrical Engineering student at IVC & SCC.</p>
+    <a href="#roadmap" class="btn">View Architecture →</a>
+</header>
+
+<section class="roadmap fade-in" id="roadmap">
+    <h2>Roadmap</h2>
+    <div class="timeline-container" id="timelineContainer">
+        <div class="timeline-center-guide"></div>
+        <div class="timeline-track" id="timelineTrack"></div>
+    </div>
+    <div class="timeline-display" id="timelineDisplay">
+        <h3 id="displayTitle">Title</h3>
+        <h4 id="displaySubtitle">Subtitle</h4>
+        <p id="displayDesc">Description goes here.</p>
+    </div>
+</section>
+
+</div>
+
+<script src="script.js" defer></script>
+</body>
+</html>
