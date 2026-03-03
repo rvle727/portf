@@ -107,6 +107,10 @@
             -webkit-overflow-scrolling: touch; 
             scrollbar-width: none;
             cursor: grab;
+            
+            /* ADDED: Scroll snapping container */
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
         }
         .timeline-container:active { cursor: grabbing; }
         .timeline-container::-webkit-scrollbar { display: none; }
@@ -132,6 +136,13 @@
             flex-shrink: 0;
             position: relative;
             height: 100%;
+            /* Removed scroll-snap-align from regular nodes so they slide past */
+        }
+
+        /* ADDED: Only snap on the big milestone ticks */
+        .milestone {
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
         }
 
         .node-tick {
@@ -326,7 +337,6 @@
 
             const TICKS_BETWEEN_MILESTONES = 8; 
 
-            // 1. Build the HTML dynamically
             track.innerHTML += `<div class="timeline-spacer left-spacer"></div>`; 
             
             milestonesData.forEach((ms, index) => {
@@ -355,7 +365,6 @@
             const leftSpacer = document.querySelector('.left-spacer');
             const rightSpacer = document.querySelector('.right-spacer');
 
-            // 2. Parabolic Arc Calculation on Scroll
             function updateTimeline() {
                 const halfContainer = container.offsetWidth / 2;
                 const nodeWidthOffset = 17.5; 
@@ -430,6 +439,7 @@
                 
                 if (container.scrollLeft >= (container.scrollWidth - container.clientWidth)) {
                     isAutoScrolling = false;
+                    container.style.scrollSnapType = 'x mandatory'; // Restore snapping
                     return;
                 }
                 
@@ -440,6 +450,7 @@
                 if(isAutoScrolling) {
                     isAutoScrolling = false;
                     cancelAnimationFrame(autoScrollAnimationId);
+                    container.style.scrollSnapType = 'x mandatory'; // Restore snapping on user interact
                 }
             };
 
@@ -451,6 +462,7 @@
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         isAutoScrolling = true;
+                        container.style.scrollSnapType = 'none'; // Temporarily disable snap so it scrolls smoothly
                         autoScrollTimeline();
                         timelineObserver.unobserve(entry.target); 
                     }
@@ -459,18 +471,31 @@
             
             timelineObserver.observe(container);
 
-            // Desktop custom drag logic
+            // Desktop custom drag logic & text highlight prevention
             let isDown = false;
             let startX;
             let scrollLeft;
+            
             container.addEventListener('mousedown', (e) => {
-                isDown = true; startX = e.pageX - container.offsetLeft; scrollLeft = container.scrollLeft;
+                isDown = true; 
+                startX = e.pageX - container.offsetLeft; 
+                scrollLeft = container.scrollLeft;
+                container.style.scrollSnapType = 'none'; // Disable snap while actively dragging
+                document.body.style.userSelect = 'none'; // Prevents text highlighting
             });
-            container.addEventListener('mouseleave', () => { isDown = false; });
-            container.addEventListener('mouseup', () => { isDown = false; });
+            
+            const endDrag = () => {
+                if (!isDown) return;
+                isDown = false; 
+                container.style.scrollSnapType = 'x mandatory'; // Re-enable snap so it clicks into place
+                document.body.style.userSelect = ''; // Restore normal text highlighting on release
+            };
+            
+            container.addEventListener('mouseleave', endDrag);
+            container.addEventListener('mouseup', endDrag);
+            
             container.addEventListener('mousemove', (e) => {
                 if (!isDown) return;
-                e.preventDefault(); 
                 const x = e.pageX - container.offsetLeft;
                 const walk = (x - startX) * 2; 
                 container.scrollLeft = scrollLeft - walk;
